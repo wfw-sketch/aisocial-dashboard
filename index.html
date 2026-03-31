@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iDocSocial — AISocial Command Center</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #242836;
+    --border: #2e3347;
+    --accent: #6c5ce7;
+    --accent2: #00cec9;
+    --accent3: #fd79a8;
+    --text: #e8e8f0;
+    --text2: #9ca3af;
+    --success: #00b894;
+    --warn: #fdcb6e;
+    --danger: #e17055;
+    --radius: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar { position: fixed; left:0; top:0; bottom:0; width: 240px; background: var(--surface); border-right: 1px solid var(--border); padding: 20px 0; z-index: 100; display: flex; flex-direction: column; }
+  .sidebar-brand { padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  .sidebar-brand h1 { font-size: 20px; font-weight: 700; }
+  .sidebar-brand h1 span { color: var(--accent); }
+  .sidebar-brand p { font-size: 11px; color: var(--text2); margin-top: 4px; }
+  .nav-section { padding: 8px 12px; font-size: 10px; text-transform: uppercase; color: var(--text2); letter-spacing: 1.2px; margin-top: 8px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; font-size: 14px; color: var(--text2); transition: all .15s; border-left: 3px solid transparent; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(108,92,231,.12); color: var(--accent); border-left-color: var(--accent); }
+  .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+  .nexus-status { margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--border); }
+  .nexus-badge { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: linear-gradient(135deg, rgba(108,92,231,.15), rgba(0,206,201,.15)); border: 1px solid rgba(108,92,231,.3); border-radius: var(--radius); }
+  .nexus-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
+  .nexus-badge .nexus-label { font-size: 12px; font-weight: 600; }
+  .nexus-badge .nexus-sub { font-size: 10px; color: var(--text2); }
+
+  /* MAIN */
+  .main { margin-left: 240px; padding: 28px 32px; }
+
+  /* TOP BAR */
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  .topbar h2 { font-size: 22px; font-weight: 700; }
+  .topbar-actions { display: flex; gap: 10px; }
+  .btn { padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; font-size: 13px; transition: all .15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { border-color: var(--accent); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #5b4bd5; }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  /* STAT CARDS */
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .stat-card .stat-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .stat-card .stat-value { font-size: 26px; font-weight: 700; }
+  .stat-card .stat-change { font-size: 11px; margin-top: 4px; }
+  .stat-card .stat-change.up { color: var(--success); }
+  .stat-card .stat-change.down { color: var(--danger); }
+
+  /* CHARACTER CARDS */
+  .char-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: all .2s; position: relative; overflow: hidden; }
+  .char-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .char-card.selected { border-color: var(--accent); box-shadow: 0 0 20px rgba(108,92,231,.2); }
+  .char-emoji { font-size: 36px; margin-bottom: 10px; }
+  .char-name { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+  .char-role { font-size: 12px; color: var(--accent2); margin-bottom: 8px; }
+  .char-personality { font-size: 12px; color: var(--text2); margin-bottom: 10px; line-height: 1.5; }
+  .char-voice { font-size: 12px; font-style: italic; color: var(--accent3); padding: 8px 12px; background: rgba(253,121,168,.08); border-radius: 8px; }
+  .char-tag { position: absolute; top: 12px; right: 12px; font-size: 10px; padding: 3px 8px; border-radius: 20px; background: rgba(108,92,231,.2); color: var(--accent); }
+
+  /* CONTENT FORMAT CARDS */
+  .format-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; cursor: pointer; transition: all .15s; }
+  .format-card:hover { border-color: var(--accent2); }
+  .format-card.selected { border-color: var(--accent2); background: rgba(0,206,201,.06); }
+  .format-icon { font-size: 28px; margin-bottom: 8px; }
+  .format-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .format-desc { font-size: 12px; color: var(--text2); line-height: 1.4; }
+
+  /* SCRIPT GENERATOR */
+  .script-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+  .script-output { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; min-height: 200px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; color: var(--text2); margin-top: 12px; }
+  .script-output .char-line { margin-bottom: 8px; }
+  .script-output .char-label { font-weight: 700; color: var(--accent); }
+
+  /* FORM ELEMENTS */
+  .form-group { margin-bottom: 14px; }
+  .form-group label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 6px; }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-size: 13px; font-family: inherit; outline: none; transition: border-color .15s;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--accent); }
+  .form-group textarea { min-height: 80px; resize: vertical; }
+  .form-group select option { background: var(--surface); }
+
+  /* DISTRIBUTION CHANNELS */
+  .channel-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .channel-chip { padding: 6px 14px; border-radius: 20px; font-size: 12px; border: 1px solid var(--border); cursor: pointer; transition: all .15s; }
+  .channel-chip:hover { border-color: var(--accent); }
+  .channel-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* PIPELINE TRACKER */
+  .pipeline { display: flex; gap: 16px; margin-top: 16px; }
+  .pipeline-stage { flex: 1; }
+  .pipeline-header { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid var(--border); display: flex; justify-content: space-between; }
+  .pipeline-header .count { background: var(--surface2); padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .pipeline-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; font-size: 12px; cursor: grab; }
+  .pipeline-item .pi-title { font-weight: 600; margin-bottom: 4px; }
+  .pipeline-item .pi-meta { color: var(--text2); font-size: 11px; display: flex; justify-content: space-between; }
+
+  /* PROJECT TRACKER */
+  .task-list { list-style: none; }
+  .task-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .task-item:last-child { border-bottom: none; }
+  .task-check { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .task-check.done { background: var(--success); border-color: var(--success); }
+  .task-check.done::after { content: '✓'; font-size: 11px; color: #fff; }
+  .task-text { flex: 1; }
+  .task-text.done-text { text-decoration: line-through; color: var(--text2); }
+  .task-assignee { font-size: 11px; padding: 3px 10px; background: var(--surface2); border-radius: 12px; color: var(--text2); }
+  .task-priority { font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+  .task-priority.high { background: rgba(225,112,85,.15); color: var(--danger); }
+  .task-priority.med { background: rgba(253,203,110,.15); color: var(--warn); }
+  .task-priority.low { background: rgba(0,184,148,.15); color: var(--success); }
+  .add-task-row { display: flex; gap: 8px; padding: 12px 14px; }
+  .add-task-row input { flex: 1; }
+
+  /* STRATEGY */
+  .roadmap-item { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .roadmap-item:last-child { border-bottom: none; }
+  .roadmap-phase { width: 80px; flex-shrink: 0; }
+  .roadmap-phase .phase-label { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--accent); font-weight: 700; }
+  .roadmap-phase .phase-time { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .roadmap-content { flex: 1; }
+  .roadmap-content h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .roadmap-content p { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+  .monetize-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; text-align: center; }
+  .monetize-card .mc-icon { font-size: 32px; margin-bottom: 8px; }
+  .monetize-card .mc-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .monetize-card .mc-desc { font-size: 12px; color: var(--text2); line-height: 1.4; }
+  .monetize-card .mc-value { font-size: 18px; font-weight: 700; color: var(--success); margin-top: 8px; }
+
+  /* NOTES */
+  .notes-area { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; min-height: 120px; font-size: 13px; color: var(--text); outline: none; width: 100%; font-family: inherit; line-height: 1.6; resize: vertical; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+  .tab { padding: 8px 16px; font-size: 13px; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; background: none; border-top: none; border-left: none; border-right: none; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* PROGRESS BAR */
+  .progress-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+
+  /* NEXUS PANEL */
+  .nexus-panel { background: linear-gradient(135deg, rgba(108,92,231,.08), rgba(0,206,201,.08)); border: 1px solid rgba(108,92,231,.25); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+  .nexus-panel h3 { display: flex; align-items: center; gap: 8px; }
+  .nexus-panel h3 .nexus-icon { font-size: 20px; }
+  .nexus-log { margin-top: 12px; max-height: 160px; overflow-y: auto; }
+  .nexus-log-item { font-size: 12px; padding: 6px 0; border-bottom: 1px solid rgba(108,92,231,.12); color: var(--text2); display: flex; gap: 8px; }
+  .nexus-log-item .nli-time { color: var(--accent); font-weight: 600; white-space: nowrap; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 1200px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 900px) { .grid-3 { grid-template-columns: 1fr; } .grid-2 { grid-template-columns: 1fr; } .sidebar { width: 60px; } .sidebar-brand h1, .sidebar-brand p, .nav-item span, .nav-section, .nexus-badge .nexus-label, .nexus-badge .nexus-sub { display: none; } .main { margin-left: 60px; } }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <h1>iDoc<span>Social</span></h1>
+    <p>AISocial Command Center</p>
+  </div>
+
+  <div class="nav-section">Main</div>
+  <div class="nav-item active" data-page="overview">
+    <span class="icon">📊</span><span>Overview</span>
+  </div>
+  <div class="nav-item" data-page="aisocial">
+    <span class="icon">🎭</span><span>AISocial Launcher</span>
+  </div>
+  <div class="nav-item" data-page="pipeline">
+    <span class="icon">🔄</span><span>Content Pipeline</span>
+  </div>
+
+  <div class="nav-section">Collaborate</div>
+  <div class="nav-item" data-page="projects">
+    <span class="icon">📋</span><span>Project Tracker</span>
+  </div>
+  <div class="nav-item" data-page="notes">
+    <span class="icon">📝</span><span>Shared Notes</span>
+  </div>
+
+  <div class="nav-section">Strategy</div>
+  <div class="nav-item" data-page="strategy">
+    <span class="icon">🚀</span><span>Brand Strategy</span>
+  </div>
+  <div class="nav-item" data-page="monetize">
+    <span class="icon">💰</span><span>Monetization</span>
+  </div>
+
+  <div class="nexus-status">
+    <div class="nexus-badge">
+      <div class="nexus-dot"></div>
+      <div>
+        <div class="nexus-label">Nexus Agent</div>
+        <div class="nexus-sub">Online — Coordinating</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- NEXUS COORDINATOR BAR -->
+  <div class="nexus-panel">
+    <h3><span class="nexus-icon">🤖</span> Nexus — Workflow Coordinator</h3>
+    <div style="font-size:12px; color:var(--text2); margin-top:4px;">Your AI agent managing the AISocial content pipeline and project coordination.</div>
+    <div class="nexus-log" id="nexusLog">
+      <div class="nexus-log-item"><span class="nli-time">09:41</span> Nexus initialized — scanning ophthalmology news feeds...</div>
+      <div class="nexus-log-item"><span class="nli-time">09:42</span> Found 3 new FDA updates relevant to retina & refractive.</div>
+      <div class="nexus-log-item"><span class="nli-time">09:43</span> Draft script queued: "Weekly Eye News — ASCRS Preview Edition"</div>
+      <div class="nexus-log-item"><span class="nli-time">09:44</span> Notified Bill & partner — 2 items awaiting review.</div>
+      <div class="nexus-log-item"><span class="nli-time">09:45</span> Content calendar updated for week of Mar 30.</div>
+    </div>
+  </div>
+
+  <!-- ===== OVERVIEW PAGE ===== -->
+  <div class="page active" id="page-overview">
+    <div class="topbar">
+      <h2>Dashboard Overview</h2>
+      <div class="topbar-actions">
+        <button class="btn" data-action="sync-nexus">🔄 Sync Nexus</button>
+        <button class="btn btn-primary" data-action="new-content">+ New Content</button>
+      </div>
+    </div>
+
+    <div class="grid-4" style="margin-bottom: 20px;">
+      <div class="stat-card">
+        <div class="stat-label">Content Pieces Created</div>
+        <div class="stat-value">24</div>
+        <div class="stat-change up">↑ 8 this week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Scripts in Pipeline</div>
+        <div class="stat-value">7</div>
+        <div class="stat-change up">3 ready for review</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Characters</div>
+        <div class="stat-value">5</div>
+        <div class="stat-change up">All operational</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Distribution Channels</div>
+        <div class="stat-value">4</div>
+        <div class="stat-change">IG, TikTok, YT, iDocSocial</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Recent Content Activity</h3>
+        <div style="font-size:13px;">
+          <div style="padding:10px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;">
+            <div><strong>Weekly Eye News #12</strong> — ASCRS Preview<br><span style="font-size:11px;color:var(--text2);">Refractive, Glaucoma, Retina — Roundtable</span></div>
+            <span style="font-size:11px;color:var(--success);padding:4px 10px;background:rgba(0,184,148,.1);border-radius:12px;height:fit-content;">Published</span>
+          </div>
+          <div style="padding:10px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;">
+            <div><strong>Hot Take: "Is SMILE Pro the Future?"</strong><br><span style="font-size:11px;color:var(--text2);">Refractive Specialist — 45 sec clip</span></div>
+            <span style="font-size:11px;color:var(--warn);padding:4px 10px;background:rgba(253,203,110,.1);border-radius:12px;height:fit-content;">In Review</span>
+          </div>
+          <div style="padding:10px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;">
+            <div><strong>Case Battle: Complex Cataract</strong><br><span style="font-size:11px;color:var(--text2);">Cornea vs Retina — Debate format</span></div>
+            <span style="font-size:11px;color:var(--accent);padding:4px 10px;background:rgba(108,92,231,.1);border-radius:12px;height:fit-content;">Drafting</span>
+          </div>
+          <div style="padding:10px 0; display:flex; justify-content:space-between;">
+            <div><strong>Conference Recap: AAO Highlights</strong><br><span style="font-size:11px;color:var(--text2);">All characters — Multi-segment</span></div>
+            <span style="font-size:11px;color:var(--text2);padding:4px 10px;background:var(--surface2);border-radius:12px;height:fit-content;">Planned</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Project Progress</h3>
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Character Development</span><span style="color:var(--success);">100%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--success);"></div></div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Script Template System</span><span style="color:var(--accent);">75%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:75%;background:var(--accent);"></div></div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>AI Avatar Generation</span><span style="color:var(--warn);">40%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:40%;background:var(--warn);"></div></div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Distribution Setup</span><span style="color:var(--danger);">20%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:20%;background:var(--danger);"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Monetization Framework</span><span style="color:var(--danger);">10%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:10%;background:var(--danger);"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== AISOCIAL LAUNCHER PAGE ===== -->
+  <div class="page" id="page-aisocial">
+    <div class="topbar">
+      <h2>AISocial — Content Launcher</h2>
+      <div class="topbar-actions">
+        <button class="btn" data-action="reset-generator">🔄 Reset</button>
+        <button class="btn btn-primary" data-action="generate-script">⚡ Generate Script</button>
+      </div>
+    </div>
+
+    <!-- Step 1: Character Selection -->
+    <div class="card">
+      <h3>Step 1 — Select Character(s)</h3>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:14px;">Click one or more characters to feature in this content piece.</p>
+      <div class="grid-3" id="characterGrid">
+        <div class="char-card" data-char="refractive">
+          <div class="char-tag">Subspecialty</div>
+          <div class="char-emoji">👁️</div>
+          <div class="char-name">Dr. Max Blazer</div>
+          <div class="char-role">Refractive Specialist — The Showman</div>
+          <div class="char-personality">Flashy, confident, marketing-forward. Loves outcomes, tech, and the "wow factor."</div>
+          <div class="char-voice">"Game changer… patients are loving this…"</div>
+        </div>
+        <div class="char-card" data-char="neuro">
+          <div class="char-tag">Subspecialty</div>
+          <div class="char-emoji">🧠</div>
+          <div class="char-name">Dr. Nina Cortex</div>
+          <div class="char-role">Neuro / Academic — The Nerd</div>
+          <div class="char-personality">Hyper-intellectual, detail-oriented. Breaks down studies, nuance, and methodology.</div>
+          <div class="char-voice">"If you actually read the paper…"</div>
+        </div>
+        <div class="char-card" data-char="glaucoma">
+          <div class="char-tag">Subspecialty</div>
+          <div class="char-emoji">👓</div>
+          <div class="char-name">Dr. Glen Pressure</div>
+          <div class="char-role">Glaucoma Specialist — The Realist</div>
+          <div class="char-personality">Conservative, risk-averse, dry humor. Focus on safety, long-term outcomes, compliance.</div>
+          <div class="char-voice">"That's great… but what's the pressure doing?"</div>
+        </div>
+        <div class="char-card" data-char="retina">
+          <div class="char-tag">Subspecialty</div>
+          <div class="char-emoji">🩸</div>
+          <div class="char-name">Dr. Ray Fundus</div>
+          <div class="char-role">Retina Specialist — The Intensity Guy</div>
+          <div class="char-personality">Urgent, high-stakes, slightly dramatic. "Save vision now" mindset, procedural heavy.</div>
+          <div class="char-voice">"This is not something you watch…"</div>
+        </div>
+        <div class="char-card" data-char="cornea">
+          <div class="char-tag">Subspecialty</div>
+          <div class="char-emoji">🔬</div>
+          <div class="char-name">Dr. Clara Stroma</div>
+          <div class="char-role">Cornea Specialist — The Craftsman</div>
+          <div class="char-personality">Thoughtful, precise, surgical purist. Tissue, healing, biomechanics.</div>
+          <div class="char-voice">"The cornea remembers everything…"</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Content Format -->
+    <div class="card">
+      <h3>Step 2 — Choose Content Format</h3>
+      <div class="grid-4" id="formatGrid">
+        <div class="format-card" data-format="weekly">
+          <div class="format-icon">📺</div>
+          <div class="format-name">Weekly Eye News</div>
+          <div class="format-desc">Characters react to new studies, FDA approvals, industry moves. Roundtable or split-screen debate.</div>
+        </div>
+        <div class="format-card" data-format="hottake">
+          <div class="format-icon">🔥</div>
+          <div class="format-name">Hot Takes</div>
+          <div class="format-desc">Quick 30–60 sec clips. Bold opinions, rapid-fire reactions. High engagement.</div>
+        </div>
+        <div class="format-card" data-format="casebattle">
+          <div class="format-icon">⚔️</div>
+          <div class="format-name">Case Battles</div>
+          <div class="format-desc">Present a clinical case. Each personality gives their approach. Education + entertainment.</div>
+        </div>
+        <div class="format-card" data-format="recap">
+          <div class="format-icon">🎤</div>
+          <div class="format-name">Conference Recaps</div>
+          <div class="format-desc">"What actually mattered at [Conference]." Each character filters through their lens.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Topic & Distribution -->
+    <div class="grid-2">
+      <div class="card">
+        <h3>Step 3 — Topic & Details</h3>
+        <div class="form-group">
+          <label>Topic / Headline</label>
+          <input type="text" id="topicInput" placeholder="e.g., New FDA approval for faricimab in DME...">
+        </div>
+        <div class="form-group">
+          <label>Key Talking Points</label>
+          <textarea id="talkingPoints" placeholder="Bullet points, study highlights, or controversy angles..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Tone</label>
+          <select id="toneSelect">
+            <option value="balanced">Balanced & Informative</option>
+            <option value="debate">Debate / Confrontational</option>
+            <option value="hype">Hype / Exciting</option>
+            <option value="educational">Deep Dive / Educational</option>
+            <option value="humor">Light / Humorous</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Step 4 — Distribution</h3>
+        <div class="form-group">
+          <label>Target Channels</label>
+          <div class="channel-chips">
+            <span class="channel-chip active">📸 Instagram</span>
+            <span class="channel-chip active">🎵 TikTok</span>
+            <span class="channel-chip active">📺 YouTube Shorts</span>
+            <span class="channel-chip">🐦 Twitter/X</span>
+            <span class="channel-chip active">👁️ iDocSocial</span>
+            <span class="channel-chip">💼 LinkedIn</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Target Length</label>
+          <select id="lengthSelect">
+            <option value="30">30 seconds</option>
+            <option value="60" selected>60 seconds</option>
+            <option value="120">2 minutes</option>
+            <option value="300">5 minutes (full segment)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Schedule</label>
+          <input type="date" id="scheduleDate">
+        </div>
+        <div class="form-group">
+          <label>Assign to Nexus for Processing</label>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary" style="flex:1;" data-action="assign-nexus">🤖 Send to Nexus</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Script Output -->
+    <div class="script-panel">
+      <h3>Generated Script Preview</h3>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Select characters, a format, and topic — then hit "Generate Script" to see a preview.</div>
+      <div class="script-output" id="scriptOutput">
+        <span style="color:var(--text2);font-style:italic;">Waiting for input... Select characters and format above to generate a script outline.</span>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button class="btn" data-action="copy-script">📋 Copy Script</button>
+        <button class="btn" data-action="add-to-pipeline">📥 Add to Pipeline</button>
+        <button class="btn btn-primary" data-action="send-to-nexus">🤖 Send to Nexus for Production</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CONTENT PIPELINE PAGE ===== -->
+  <div class="page" id="page-pipeline">
+    <div class="topbar">
+      <h2>Content Pipeline</h2>
+      <div class="topbar-actions">
+        <button class="btn btn-primary" data-action="new-content">+ New Content</button>
+      </div>
+    </div>
+
+    <div class="pipeline" id="pipelineBoard">
+      <div class="pipeline-stage">
+        <div class="pipeline-header" style="border-bottom-color:var(--text2);">
+          <span>💡 Ideation</span><span class="count" id="countIdea">2</span>
+        </div>
+        <div id="stageIdea">
+          <div class="pipeline-item">
+            <div class="pi-title">MIGS vs Trab Debate</div>
+            <div class="pi-meta"><span>👓🩸 Glaucoma + Retina</span><span>Apr 2</span></div>
+          </div>
+          <div class="pipeline-item">
+            <div class="pi-title">AI in Diagnostics Deep Dive</div>
+            <div class="pi-meta"><span>🧠 Neuro/Academic</span><span>Apr 5</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="pipeline-stage">
+        <div class="pipeline-header" style="border-bottom-color:var(--accent);">
+          <span>✍️ Scripting</span><span class="count" id="countScript">2</span>
+        </div>
+        <div id="stageScript">
+          <div class="pipeline-item">
+            <div class="pi-title">Weekly Eye News #13</div>
+            <div class="pi-meta"><span>👁️🧠👓 Multi-char</span><span>Mar 31</span></div>
+          </div>
+          <div class="pipeline-item">
+            <div class="pi-title">Hot Take: ICL vs LASIK</div>
+            <div class="pi-meta"><span>👁️ Refractive</span><span>Apr 1</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="pipeline-stage">
+        <div class="pipeline-header" style="border-bottom-color:var(--warn);">
+          <span>🎬 Production</span><span class="count" id="countProd">1</span>
+        </div>
+        <div id="stageProd">
+          <div class="pipeline-item">
+            <div class="pi-title">Case Battle: Complex Cataract</div>
+            <div class="pi-meta"><span>🔬🩸 Cornea + Retina</span><span>Mar 30</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="pipeline-stage">
+        <div class="pipeline-header" style="border-bottom-color:var(--accent2);">
+          <span>👁️ Review</span><span class="count" id="countReview">1</span>
+        </div>
+        <div id="stageReview">
+          <div class="pipeline-item">
+            <div class="pi-title">Hot Take: SMILE Pro</div>
+            <div class="pi-meta"><span>👁️ Refractive</span><span>Mar 29</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="pipeline-stage">
+        <div class="pipeline-header" style="border-bottom-color:var(--success);">
+          <span>✅ Published</span><span class="count" id="countPub">3</span>
+        </div>
+        <div id="stagePub">
+          <div class="pipeline-item">
+            <div class="pi-title">Weekly Eye News #12</div>
+            <div class="pi-meta"><span>Multi-char</span><span>Mar 27</span></div>
+          </div>
+          <div class="pipeline-item">
+            <div class="pi-title">Hot Take: PRK Is Dead?</div>
+            <div class="pi-meta"><span>👁️👓 Refract + Glauc</span><span>Mar 25</span></div>
+          </div>
+          <div class="pipeline-item">
+            <div class="pi-title">Conference Recap: ARVO</div>
+            <div class="pi-meta"><span>All characters</span><span>Mar 22</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PROJECTS PAGE ===== -->
+  <div class="page" id="page-projects">
+    <div class="topbar">
+      <h2>Project Tracker</h2>
+      <div class="topbar-actions">
+        <button class="btn btn-primary" data-action="add-project-task">+ Add Task</button>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>🚀 Launch Tasks — AISocial</h3>
+        <ul class="task-list" id="launchTasks">
+          <li class="task-item">
+            <div class="task-check done"></div>
+            <span class="task-text done-text">Define 5 core AI character personalities</span>
+            <span class="task-priority low">Done</span>
+            <span class="task-assignee">Bill</span>
+          </li>
+          <li class="task-item">
+            <div class="task-check done"></div>
+            <span class="task-text done-text">Create character voice guidelines</span>
+            <span class="task-priority low">Done</span>
+            <span class="task-assignee">Bill</span>
+          </li>
+          <li class="task-item">
+            <div class="task-check"></div>
+            <span class="task-text">Design AI avatar visuals for each character</span>
+            <span class="task-priority high">High</span>
+            <span class="task-assignee">Partner</span>
+          </li>
+          <li class="task-item">
+            <div class="task-check"></div>
+            <span class="task-text">Set up AI voice synthesis pipeline</span>
+            <span class="task-priority high">High</span>
+            <span class="task-assignee">Nexus</span>
+          </li>
+          <li class="task-item">
+            <div class="task-check"></div>
+            <span class="task-text">Build script generation templates</span>
+            <span class="task-priority med">Medium</span>
+            <span class="task-assignee">Cowork</span>
+          </li>
+          <li class="task-item">
+            <div class="task-check"></div>
+            <span class="task-text">Configure IG, TikTok, YouTube accounts</span>
+            <span class="task-priority med">Medium</span>
+            <span class="task-assignee">Partner</span>
+          </li>
+          <li class="task-item">
+            <div class="task-check"></div>
+            <span class="task-text">Create pilot episode — Weekly Eye News #1</span>
+            <span class="task-priority high">High</span>
+            <span class="task-assignee">All</span>
+          </li>
+        </ul>
+        <div class="add-task-row">
+          <input type="text" id="newLaunchTask" placeholder="Add a new task...">
+          <button class="btn" data-action="add-launch-task">Add</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📋 General iDocSocial Projects</h3>
+        <ul class="task-list" id="generalTasks">
+          <li class="task-item">
+            <div class="task-check"></div>
+            <span class="task-text">Platform integration planning for AISocial content</span>
+            <span class="task-priority med">Medium</span>
+            <span class="task-assignee">Bill</span>
+          </li>
+          <li class="task-item">
+            <div class="task-check"></div>
+            <span class="task-text">Sponsor outreach deck — refractive laser companies</span>
+            <span class="task-priority med">Medium</span>
+            <span class="task-assignee">Partner</span>
+          </li>
+          <li class="task-item">
+            <div class="task-check"></div>
+            <span class="task-text">Legal review — AI-generated medical content guidelines</span>
+            <span class="task-priority high">High</span>
+            <span class="task-assignee">Bill</span>
+          </li>
+          <li class="task-item">
+            <div class="task-check"></div>
+            <span class="task-text">Audience persona research — ophthalmology social media</span>
+            <span class="task-priority low">Low</span>
+            <span class="task-assignee">Nexus</span>
+          </li>
+        </ul>
+        <div class="add-task-row">
+          <input type="text" id="newGeneralTask" placeholder="Add a new task...">
+          <button class="btn" data-action="add-general-task">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SHARED NOTES PAGE ===== -->
+  <div class="page" id="page-notes">
+    <div class="topbar">
+      <h2>Shared Notes</h2>
+      <div class="topbar-actions">
+        <button class="btn btn-primary" data-action="save-notes">💾 Save Notes</button>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>📝 Bill's Notes</h3>
+        <textarea class="notes-area" id="billNotes" placeholder="Write your notes here...">Key insight: People don't follow information — they follow personalities.
+
+AISocial is basically "Top Gear meets ophthalmology meets AI media."
+
+Priority: Get the pilot episode of Weekly Eye News done first. Use that as the proof of concept for sponsors.
+
+Need to discuss with partner: AI avatar platform choice — looking at HeyGen, Synthesia, or custom solution.
+
+Nexus should handle: automated news scanning, draft script generation, scheduling across platforms.</textarea>
+      </div>
+      <div class="card">
+        <h3>📝 Partner's Notes</h3>
+        <textarea class="notes-area" id="partnerNotes" placeholder="Partner notes go here...">Visual identity thoughts:
+- Each character needs a distinct look that's recognizable even in thumbnails
+- Color coding by subspecialty would help brand recognition
+- Thinking animated avatars rather than photorealistic — more shareable
+
+Distribution strategy:
+- Start with Instagram Reels + TikTok — highest discovery potential
+- YouTube Shorts for longer shelf life
+- iDocSocial for the ophthalmology community deep engagement
+
+Revenue notes:
+- Sponsored segments feel natural: refractive → laser companies, retina → pharma
+- Could do "presented by" model for Weekly Eye News</textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🤖 Nexus Activity Notes</h3>
+      <textarea class="notes-area" id="nexusNotes" placeholder="Nexus-generated notes and observations...">— Auto-generated by Nexus —
+
+News sources being monitored:
+• AAO, ASCRS, ARVO feeds
+• PubMed ophthalmology RSS
+• FDA MedWatch — ophthalmic devices & drugs
+• Ophthalmology Times, Review of Ophthalmology
+
+Content opportunities flagged this week:
+1. New Vivity IOL 5-year data published → good for Refractive + Cornea discussion
+2. FDA advisory committee meeting on gene therapy for retinal dystrophy → Retina Hot Take
+3. MIGS device recall notice → Glaucoma Realist commentary opportunity
+
+Suggested next episode: "Weekly Eye News #13 — Gene Therapy, IOL Data & MIGS Safety"</textarea>
+    </div>
+  </div>
+
+  <!-- ===== STRATEGY PAGE ===== -->
+  <div class="page" id="page-strategy">
+    <div class="topbar">
+      <h2>Brand Strategy — AISocial</h2>
+    </div>
+
+    <div class="card">
+      <h3>🗺️ Launch Roadmap</h3>
+      <div class="roadmap-item">
+        <div class="roadmap-phase">
+          <div class="phase-label">Phase 1</div>
+          <div class="phase-time">Weeks 1–4</div>
+        </div>
+        <div class="roadmap-content">
+          <h4>Foundation — Character & Content System</h4>
+          <p>Finalize all 5 character identities, voice profiles, and visual avatars. Build the script generation pipeline. Create 3 pilot episodes across different formats. Establish the iDocSocial integration pathway.</p>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-phase">
+          <div class="phase-label">Phase 2</div>
+          <div class="phase-time">Weeks 5–8</div>
+        </div>
+        <div class="roadmap-content">
+          <h4>Launch — Multi-Platform Rollout</h4>
+          <p>Deploy Weekly Eye News as flagship series. Publish Hot Takes 3x/week. Launch Instagram, TikTok, and YouTube channels. Begin audience building with ophthalmology KOL engagement. Nexus automates content pipeline.</p>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-phase">
+          <div class="phase-label">Phase 3</div>
+          <div class="phase-time">Weeks 9–16</div>
+        </div>
+        <div class="roadmap-content">
+          <h4>Growth — Audience & Engagement</h4>
+          <p>Introduce Case Battles and Conference Recaps. Launch "Follow Your Personality" subscription model (Team Refractive, Team Evidence, Team Conservative). Cross-promote on iDocSocial. Target 10K followers across platforms.</p>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-phase">
+          <div class="phase-label">Phase 4</div>
+          <div class="phase-time">Month 5+</div>
+        </div>
+        <div class="roadmap-content">
+          <h4>Monetize — Sponsors & Scale</h4>
+          <p>Approach industry sponsors with proven engagement data. Launch sponsored segments (Refractive → laser platforms, Retina → drug pipelines). Explore AI thought leader positioning — characters become recognized voices in ophthalmology media.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🎯 Strategic Advantages</h3>
+      <div class="grid-4" style="margin-top:12px;">
+        <div style="text-align:center;padding:16px;">
+          <div style="font-size:32px;margin-bottom:8px;">📈</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Content Scalability</div>
+          <div style="font-size:12px;color:var(--text2);">AI-generated scripts and avatars mean unlimited production capacity without scheduling human talent.</div>
+        </div>
+        <div style="text-align:center;padding:16px;">
+          <div style="font-size:32px;margin-bottom:8px;">🏆</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Brand Differentiation</div>
+          <div style="font-size:12px;color:var(--text2);">No one else is doing "SportsCenter for ophthalmology." First mover advantage in AI medical media.</div>
+        </div>
+        <div style="text-align:center;padding:16px;">
+          <div style="font-size:32px;margin-bottom:8px;">🧲</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Audience Stickiness</div>
+          <div style="font-size:12px;color:var(--text2);">Personality-driven content creates tribes. People subscribe to "their" doctor personality type.</div>
+        </div>
+        <div style="text-align:center;padding:16px;">
+          <div style="font-size:32px;margin-bottom:8px;">💎</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Sponsor Monetization</div>
+          <div style="font-size:12px;color:var(--text2);">Natural sponsor fit by subspecialty. High-value ophthalmology industry advertisers.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>👥 Audience Tribes — "Follow Your Personality"</h3>
+      <div class="grid-3" style="margin-top:12px;">
+        <div style="padding:16px;background:rgba(108,92,231,.06);border-radius:8px;text-align:center;">
+          <div style="font-size:28px;">👁️</div>
+          <div style="font-size:14px;font-weight:600;margin:6px 0;">Team Refractive</div>
+          <div style="font-size:12px;color:var(--text2);">Innovation junkies. Want the latest tech, the biggest breakthroughs, the "wow."</div>
+        </div>
+        <div style="padding:16px;background:rgba(0,206,201,.06);border-radius:8px;text-align:center;">
+          <div style="font-size:28px;">🧠</div>
+          <div style="font-size:14px;font-weight:600;margin:6px 0;">Team Evidence</div>
+          <div style="font-size:12px;color:var(--text2);">Academic purists. Show them the data, the p-values, the methodology.</div>
+        </div>
+        <div style="padding:16px;background:rgba(253,203,110,.06);border-radius:8px;text-align:center;">
+          <div style="font-size:28px;">👓</div>
+          <div style="font-size:14px;font-weight:600;margin:6px 0;">Team Conservative</div>
+          <div style="font-size:12px;color:var(--text2);">Safety first. Long-term outcomes. "What does the pressure say?"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MONETIZATION PAGE ===== -->
+  <div class="page" id="page-monetize">
+    <div class="topbar">
+      <h2>Monetization Framework</h2>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:20px;">
+      <div class="monetize-card">
+        <div class="mc-icon">📢</div>
+        <div class="mc-title">Sponsored Segments</div>
+        <div class="mc-desc">Industry sponsors integrated naturally by subspecialty. Refractive → laser platforms, Retina → drug pipelines, Glaucoma → device companies.</div>
+        <div class="mc-value">$5K–$15K / segment</div>
+      </div>
+      <div class="monetize-card">
+        <div class="mc-icon">🏷️</div>
+        <div class="mc-title">"Presented By" Model</div>
+        <div class="mc-desc">Flagship series (Weekly Eye News) sponsored by a single premium partner. Title card + outro integration.</div>
+        <div class="mc-value">$20K–$50K / quarter</div>
+      </div>
+      <div class="monetize-card">
+        <div class="mc-icon">👥</div>
+        <div class="mc-title">Premium Subscriptions</div>
+        <div class="mc-desc">"Follow Your Personality" premium tier with extended episodes, case study libraries, and direct Q&A with characters.</div>
+        <div class="mc-value">$29/mo per subscriber</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>💰 Revenue Projections (Year 1)</h3>
+        <div style="margin-top:12px;">
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">
+            <span>Sponsored Segments (est. 4/mo)</span><span style="color:var(--success);font-weight:600;">$240K–$720K</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">
+            <span>"Presented By" Deals (2 series)</span><span style="color:var(--success);font-weight:600;">$160K–$400K</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">
+            <span>Premium Subs (target: 500 by EOY)</span><span style="color:var(--success);font-weight:600;">$87K–$174K</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">
+            <span>iDocSocial Platform Synergy</span><span style="color:var(--success);font-weight:600;">$50K–$100K</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:14px 0;font-size:15px;font-weight:700;">
+            <span>Total Potential (Year 1)</span><span style="color:var(--success);">$537K–$1.39M</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🎯 Sponsor-Character Match</h3>
+        <div style="margin-top:12px;">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">
+            <span style="font-size:20px;">👁️</span>
+            <div style="flex:1;"><strong>Refractive</strong> → ZEISS, J&J Vision, Alcon, STAAR Surgical</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">
+            <span style="font-size:20px;">🩸</span>
+            <div style="flex:1;"><strong>Retina</strong> → Regeneron, Roche/Genentech, Apellis</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">
+            <span style="font-size:20px;">👓</span>
+            <div style="flex:1;"><strong>Glaucoma</strong> → Glaukos, Allergan, iStent/Hydrus</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">
+            <span style="font-size:20px;">🔬</span>
+            <div style="flex:1;"><strong>Cornea</strong> → TelScreen, Ocular Therapeutix, SightLife</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;font-size:13px;">
+            <span style="font-size:20px;">🧠</span>
+            <div style="flex:1;"><strong>Neuro/Academic</strong> → Elsevier, AAO Education, Medscape</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+  // ===== STATE =====
+  const state = {
+    selectedChars: new Set(),
+    selectedFormat: null,
+    page: 'overview'
+  };
+
+  // Character data
+  const characters = {
+    refractive: { name: 'Dr. Max Blazer', emoji: '👁️', role: 'Refractive', style: 'confident, hype-driven' },
+    neuro: { name: 'Dr. Nina Cortex', emoji: '🧠', role: 'Neuro/Academic', style: 'intellectual, data-focused' },
+    glaucoma: { name: 'Dr. Glen Pressure', emoji: '👓', role: 'Glaucoma', style: 'conservative, dry humor' },
+    retina: { name: 'Dr. Ray Fundus', emoji: '🩸', role: 'Retina', style: 'urgent, dramatic' },
+    cornea: { name: 'Dr. Clara Stroma', emoji: '🔬', role: 'Cornea', style: 'precise, methodical' }
+  };
+
+  // Script templates by format
+  const scriptTemplates = {
+    weekly: {
+      name: 'Weekly Eye News',
+      generate(chars, topic, tone) {
+        let lines = [];
+        lines.push(`[OPEN — Weekly Eye News]\n[INTRO MUSIC + GRAPHICS]\n`);
+        lines.push(`HOST (VO): "Welcome back to Weekly Eye News — your AI-powered ophthalmology roundup. This week's big story: ${topic || '[TOPIC]'}"\n`);
+        const charArr = [...chars];
+        charArr.forEach((c, i) => {
+          const ch = characters[c];
+          lines.push(`[CUT TO: ${ch.emoji} ${ch.name}]`);
+          if (i === 0) {
+            lines.push(`${ch.name.toUpperCase()}: "Let's talk about this — ${getOpener(c, topic)}"\n`);
+          } else {
+            lines.push(`${ch.name.toUpperCase()}: "${getReaction(c, charArr[0], topic)}"\n`);
+          }
+        });
+        lines.push(`[ROUNDTABLE SEGMENT — All characters react]\n`);
+        lines.push(`[OUTRO]\nHOST (VO): "That's your Weekly Eye News. Follow us on Instagram, TikTok, and iDocSocial for more."`);
+        return lines.join('\n');
+      }
+    },
+    hottake: {
+      name: 'Hot Take',
+      generate(chars, topic, tone) {
+        let lines = [];
+        const ch = characters[[...chars][0]] || characters.refractive;
+        lines.push(`[HOT TAKE — 60 SEC]\n[GRAPHIC: 🔥 HOT TAKE]\n`);
+        lines.push(`${ch.emoji} ${ch.name.toUpperCase()}:`);
+        lines.push(`"Alright, here's what nobody's saying about ${topic || '[TOPIC]'}..."\n`);
+        lines.push(`[BEAT]\n`);
+        lines.push(`"${getHotTake(Object.keys(characters).find(k => characters[k] === ch) || 'refractive', topic)}"\n`);
+        if (chars.size > 1) {
+          const ch2 = characters[[...chars][1]];
+          lines.push(`[SMASH CUT TO: ${ch2.emoji} ${ch2.name}]\n`);
+          lines.push(`${ch2.name.toUpperCase()}: "${getCounterTake([...chars][1], topic)}"\n`);
+        }
+        lines.push(`[END CARD]\n"Follow for more Hot Takes — new drops every week."`);
+        return lines.join('\n');
+      }
+    },
+    casebattle: {
+      name: 'Case Battle',
+      generate(chars, topic, tone) {
+        let lines = [];
+        lines.push(`[CASE BATTLE]\n[GRAPHIC: ⚔️ CASE BATTLE]\n`);
+        lines.push(`HOST (VO): "Today's case: ${topic || 'A 62-year-old patient presents with...'}""\n`);
+        lines.push(`[CASE DETAILS ON SCREEN]\n`);
+        const charArr = [...chars];
+        charArr.forEach((c, i) => {
+          const ch = characters[c];
+          lines.push(`[ROUND ${i + 1} — ${ch.emoji} ${ch.name}]`);
+          lines.push(`${ch.name.toUpperCase()}: "${getCaseApproach(c, topic)}"\n`);
+        });
+        lines.push(`[AUDIENCE POLL]\nHOST (VO): "Who had the best approach? Vote now!"\n`);
+        lines.push(`[END CARD]\n"New Case Battle every week — subscribe and follow your favorite personality."`);
+        return lines.join('\n');
+      }
+    },
+    recap: {
+      name: 'Conference Recap',
+      generate(chars, topic, tone) {
+        let lines = [];
+        lines.push(`[CONFERENCE RECAP]\n[GRAPHIC: 🎤 What Actually Mattered at ${topic || '[CONFERENCE NAME]'}]\n`);
+        lines.push(`HOST (VO): "We sent our panel to ${topic || 'the conference'}. Here's what they came back with."\n`);
+        const charArr = [...chars];
+        charArr.forEach((c) => {
+          const ch = characters[c];
+          lines.push(`[SEGMENT — ${ch.emoji} ${ch.name}'s Top Pick]`);
+          lines.push(`${ch.name.toUpperCase()}: "${getConferenceTake(c, topic)}"\n`);
+        });
+        lines.push(`[WRAP-UP — Split Screen]\nHOST (VO): "That's the ${topic || 'conference'} through five different lenses. Who nailed it?"\n`);
+        lines.push(`[END CARD + SOCIAL LINKS]`);
+        return lines.join('\n');
+      }
+    }
+  };
+
+  // Voice helpers
+  function getOpener(char, topic) {
+    const t = topic || 'this development';
+    const openers = {
+      refractive: `This is a game changer. The data on ${t} is exactly what I've been waiting for. Patients are going to love this.`,
+      neuro: `Interesting. But if you actually look at the study design... the sample size raises some questions. Let me break this down.`,
+      glaucoma: `Look, that's great and all, but what about the long-term safety data? We're talking about ${t} — let's not get ahead of ourselves.`,
+      retina: `This is urgent. ${t} could change how we handle these cases in the next 6 months. We can't afford to wait and watch.`,
+      cornea: `The tissue implications here are fascinating. ${t} — the biomechanical considerations alone deserve a deeper look.`
+    };
+    return openers[char] || openers.refractive;
+  }
+
+  function getReaction(char, firstChar, topic) {
+    const reactions = {
+      refractive: `Come on — you're overthinking this. The outcomes speak for themselves.`,
+      neuro: `That's… one way to interpret the data. But let me show you what the subgroup analysis actually says.`,
+      glaucoma: `I hear you, but at what cost? I've seen complications from rushing into these things. The pressure doesn't lie.`,
+      retina: `We don't have the luxury of waiting for perfect data. Patients are losing vision right now.`,
+      cornea: `Both of you are missing the point. The cornea remembers everything. You need to think about healing first.`
+    };
+    return reactions[char] || reactions.refractive;
+  }
+
+  function getHotTake(char, topic) {
+    const takes = {
+      refractive: `Everyone's sleeping on this. ${topic || 'This technology'} is about to make half the current approaches obsolete. I said what I said.`,
+      neuro: `Here's the thing — the evidence actually contradicts what most people think about ${topic || 'this'}. And I can prove it.`,
+      glaucoma: `Unpopular opinion: we're moving too fast on ${topic || 'this'}. I've been doing this for decades and rushing never ends well.`,
+      retina: `If you're not paying attention to ${topic || 'this'}, you're going to miss the window. This isn't academic — this is real.`,
+      cornea: `Everyone wants to talk about outcomes, but nobody's talking about what ${topic || 'this'} does to the tissue long-term. Classic.`
+    };
+    return takes[char] || takes.refractive;
+  }
+
+  function getCounterTake(char, topic) {
+    const counters = {
+      refractive: `Whoa whoa whoa — slow down. Let me show you the real numbers here.`,
+      neuro: `Okay, that was… passionate. But let's look at what the literature actually supports.`,
+      glaucoma: `Relax. It still has a role. Not everything needs to be a revolution.`,
+      retina: `That's easy to say when you're not the one watching someone's vision deteriorate.`,
+      cornea: `You're both right, and you're both wrong. It depends entirely on the tissue response.`
+    };
+    return counters[char] || counters.glaucoma;
+  }
+
+  function getCaseApproach(char, topic) {
+    const approaches = {
+      refractive: `My approach? Go aggressive. We have the technology. Let's optimize this patient's visual outcome with the latest platform.`,
+      neuro: `First, I want imaging. Full workup. We need to rule out the differentials before we even talk about intervention.`,
+      glaucoma: `Step one: what's the pressure? Step two: what's the nerve look like? Everything else is secondary until I know we're safe.`,
+      retina: `This needs intervention now. We're looking at potential vision loss if we wait. I'm booking the OR.`,
+      cornea: `Let's slow down. I want to assess the corneal integrity first. The tissue needs to guide our decision-making here.`
+    };
+    return approaches[char] || approaches.refractive;
+  }
+
+  function getConferenceTake(char, topic) {
+    const takes = {
+      refractive: `The highlight for me? The new platform demo. The precision is next level. This changes everything for my patients.`,
+      neuro: `Honestly? The best presentation was a small study most people walked past. The methodology was impeccable. Let me explain why it matters.`,
+      glaucoma: `Most of what I saw was hype. But there was one long-term safety study that actually had me optimistic. Finally — real data.`,
+      retina: `The gene therapy data blew me away. We're looking at potential cures, not just treatments. This was the most important presentation there.`,
+      cornea: `There was a tissue engineering poster that nobody talked about. It could change transplant outcomes forever. The cornea community knows.`
+    };
+    return takes[char] || takes.refractive;
+  }
+
+  // ===== NAVIGATION =====
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const target = document.getElementById('page-' + id);
+    if (target) target.classList.add('active');
+    // Highlight the correct nav item
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('data-page') === id) n.classList.add('active');
+    });
+    state.page = id;
+  }
+
+  // ===== CHARACTER SELECTION =====
+  function toggleChar(el, char) {
+    el.classList.toggle('selected');
+    if (state.selectedChars.has(char)) {
+      state.selectedChars.delete(char);
+    } else {
+      state.selectedChars.add(char);
+    }
+  }
+
+  // ===== FORMAT SELECTION =====
+  function selectFormat(el, format) {
+    document.querySelectorAll('.format-card').forEach(f => f.classList.remove('selected'));
+    el.classList.add('selected');
+    state.selectedFormat = format;
+  }
+
+  // ===== CHANNEL CHIPS =====
+  function toggleChip(el) { el.classList.toggle('active'); }
+
+  // ===== SCRIPT GENERATION =====
+  function generateScript() {
+    const output = document.getElementById('scriptOutput');
+    if (state.selectedChars.size === 0) {
+      output.innerHTML = '<span style="color:var(--danger);">⚠️ Please select at least one character above.</span>';
+      return;
+    }
+    if (!state.selectedFormat) {
+      output.innerHTML = '<span style="color:var(--danger);">⚠️ Please select a content format.</span>';
+      return;
+    }
+    const topic = document.getElementById('topicInput').value || '';
+    const tone = document.getElementById('toneSelect').value;
+    const template = scriptTemplates[state.selectedFormat];
+    const script = template.generate(state.selectedChars, topic, tone);
+
+    // Color-code character names
+    let html = script.replace(/\n/g, '<br>');
+    Object.values(characters).forEach(ch => {
+      const regex = new RegExp(ch.name.toUpperCase() + ':', 'g');
+      html = html.replace(regex, `<span style="color:var(--accent);font-weight:700;">${ch.emoji} ${ch.name.toUpperCase()}:</span>`);
+    });
+    html = html.replace(/HOST \(VO\):/g, '<span style="color:var(--accent2);font-weight:700;">HOST (VO):</span>');
+    html = html.replace(/\[(.*?)\]/g, '<span style="color:var(--warn);font-size:11px;">[$1]</span>');
+
+    output.innerHTML = html;
+    addNexusLog(`Script generated: ${template.name} — "${topic || 'Untitled'}" with ${state.selectedChars.size} character(s).`);
+  }
+
+  function resetGenerator() {
+    state.selectedChars.clear();
+    state.selectedFormat = null;
+    document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.format-card').forEach(f => f.classList.remove('selected'));
+    document.getElementById('topicInput').value = '';
+    document.getElementById('talkingPoints').value = '';
+    document.getElementById('scriptOutput').innerHTML = '<span style="color:var(--text2);font-style:italic;">Waiting for input... Select characters and format above to generate a script outline.</span>';
+  }
+
+  function copyScript() {
+    const text = document.getElementById('scriptOutput').innerText;
+    navigator.clipboard?.writeText(text);
+    addNexusLog('Script copied to clipboard.');
+  }
+
+  function addToPipeline() {
+    const topic = document.getElementById('topicInput').value || 'Untitled Content';
+    const stage = document.getElementById('stageIdea');
+    const item = document.createElement('div');
+    item.className = 'pipeline-item';
+    const charEmojis = [...state.selectedChars].map(c => characters[c].emoji).join('');
+    item.innerHTML = `<div class="pi-title">${topic}</div><div class="pi-meta"><span>${charEmojis} ${state.selectedFormat || ''}</span><span>New</span></div>`;
+    stage.appendChild(item);
+    addNexusLog(`Added to pipeline: "${topic}" → Ideation stage.`);
+  }
+
+  // ===== NEXUS =====
+  function assignToNexus() {
+    const topic = document.getElementById('topicInput').value || 'current content';
+    addNexusLog(`Nexus assigned: Processing "${topic}" — generating avatar video, scheduling distribution...`);
+  }
+
+  function addNexusLog(msg) {
+    const log = document.getElementById('nexusLog');
+    const now = new Date();
+    const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    const item = document.createElement('div');
+    item.className = 'nexus-log-item';
+    item.innerHTML = `<span class="nli-time">${time}</span> ${msg}`;
+    log.insertBefore(item, log.firstChild);
+  }
+
+  // ===== TASKS =====
+  function toggleTask(el) {
+    el.classList.toggle('done');
+    const textEl = el.nextElementSibling;
+    textEl.classList.toggle('done-text');
+  }
+
+  function addTaskToList(listId, inputId) {
+    const input = document.getElementById(inputId);
+    const text = input.value.trim();
+    if (!text) return;
+    const list = document.getElementById(listId);
+    const li = document.createElement('li');
+    li.className = 'task-item';
+    li.innerHTML = `
+      <div class="task-check"></div>
+      <span class="task-text">${text}</span>
+      <span class="task-priority med">Medium</span>
+      <span class="task-assignee">TBD</span>
+    `;
+    list.appendChild(li);
+    input.value = '';
+    addNexusLog(`New task added: "${text}"`);
+
+    // Wire up the new task check
+    const newCheck = li.querySelector('.task-check');
+    newCheck.addEventListener('click', function() {
+      toggleTask(this);
+    });
+  }
+
+  function addProjectTask() {
+    document.getElementById('newLaunchTask').focus();
+  }
+
+  // ===== NOTES =====
+  function saveNotes() {
+    addNexusLog('Shared notes saved successfully.');
+  }
+
+  // ===== EVENT DELEGATION & INIT =====
+  // NOTE: No DOMContentLoaded wrapper needed — script is at bottom of body, DOM is already ready.
+  (function initDashboard() {
+    // Set default date
+    var dateEl = document.getElementById('scheduleDate');
+    if (dateEl) {
+      try { dateEl.valueAsDate = new Date(); } catch(e) {}
+    }
+
+    // === NAVIGATION: Sidebar nav items ===
+    var navItems = document.querySelectorAll('.nav-item[data-page]');
+    for (var i = 0; i < navItems.length; i++) {
+      navItems[i].addEventListener('click', function(e) {
+        var page = this.getAttribute('data-page');
+        if (page) showPage(page);
+      });
+    }
+
+    // === CHARACTER CARDS ===
+    var charCards = document.querySelectorAll('.char-card[data-char]');
+    for (var i = 0; i < charCards.length; i++) {
+      charCards[i].addEventListener('click', function(e) {
+        var charName = this.getAttribute('data-char');
+        if (charName) toggleChar(this, charName);
+      });
+    }
+
+    // === FORMAT CARDS ===
+    var formatCards = document.querySelectorAll('.format-card[data-format]');
+    for (var i = 0; i < formatCards.length; i++) {
+      formatCards[i].addEventListener('click', function(e) {
+        var fmt = this.getAttribute('data-format');
+        if (fmt) selectFormat(this, fmt);
+      });
+    }
+
+    // === CHANNEL CHIPS ===
+    var chips = document.querySelectorAll('.channel-chip');
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].addEventListener('click', function(e) {
+        toggleChip(this);
+      });
+    }
+
+    // === TASK CHECKBOXES ===
+    var checks = document.querySelectorAll('.task-check');
+    for (var i = 0; i < checks.length; i++) {
+      checks[i].addEventListener('click', function(e) {
+        toggleTask(this);
+      });
+    }
+
+    // === BUTTON ACTIONS (data-action) ===
+    var actionBtns = document.querySelectorAll('[data-action]');
+    for (var i = 0; i < actionBtns.length; i++) {
+      actionBtns[i].addEventListener('click', function(e) {
+        var action = this.getAttribute('data-action');
+        if (action === 'sync-nexus') { addNexusLog('Manual sync triggered — pulling latest data...'); }
+        else if (action === 'new-content') { showPage('aisocial'); }
+        else if (action === 'reset-generator') { resetGenerator(); }
+        else if (action === 'generate-script') { generateScript(); }
+        else if (action === 'copy-script') { copyScript(); }
+        else if (action === 'add-to-pipeline') { addToPipeline(); }
+        else if (action === 'assign-nexus' || action === 'send-to-nexus') { assignToNexus(); }
+        else if (action === 'add-project-task') { addProjectTask(); }
+        else if (action === 'add-launch-task') { addTaskToList('launchTasks', 'newLaunchTask'); }
+        else if (action === 'add-general-task') { addTaskToList('generalTasks', 'newGeneralTask'); }
+        else if (action === 'save-notes') { saveNotes(); }
+      });
+    }
+
+    // === KEYBOARD HANDLERS ===
+    var newLaunchInput = document.getElementById('newLaunchTask');
+    if (newLaunchInput) {
+      newLaunchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') addTaskToList('launchTasks', 'newLaunchTask');
+      });
+    }
+    var newGeneralInput = document.getElementById('newGeneralTask');
+    if (newGeneralInput) {
+      newGeneralInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') addTaskToList('generalTasks', 'newGeneralTask');
+      });
+    }
+
+    document.title = 'iDocSocial — AISocial Command Center';
+  })();
+</script>
+
+</body>
+</html>
